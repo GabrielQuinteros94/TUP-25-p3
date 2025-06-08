@@ -1,4 +1,6 @@
-  public class Compra
+namespace cliente.Modelos
+{
+    public class Compra
     {
         public int Id { get; set; }
         public DateTime Fecha { get; set; }
@@ -8,3 +10,4 @@
         public string EmailCliente { get; set; }
         public List<ItemCompra> Items { get; set; }
     }
+}

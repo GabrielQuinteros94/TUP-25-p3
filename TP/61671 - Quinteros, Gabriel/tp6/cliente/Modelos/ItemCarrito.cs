@@ -1,6 +1,9 @@
-public class ItemCarrito
+namespace cliente.Modelos
 {
-    public int Id { get; set; }
-    public int ProductoId { get; set; }
-    public int Cantidad { get; set; }
+    public class ItemCarrito
+    {
+        public int Id { get; set; }
+        public int ProductoId { get; set; }
+        public int Cantidad { get; set; }
+    }
 }

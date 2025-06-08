@@ -1,7 +1,9 @@
-public class Carrito
+namespace cliente.Modelos
+{
+    public class Carrito
     {
-        public Guid Id { get; set; } = Guid.NewGuid();
-        public List<ItemCarrito> Items { get; set; } = new();
+        public Guid Id { get; set; }
+        public List<ItemCarrito> Items { get; set; }
     }
 
     public class ItemCarrito
@@ -10,3 +12,4 @@ public class Carrito
         public int ProductoId { get; set; }
         public int Cantidad { get; set; }
     }
+}

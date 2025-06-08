@@ -1,0 +1,58 @@
+@page "/"
+@using cliente.Modelos
+@inject HttpClient Http
+
+<h1>Catálogo de Autos</h1>
+
+<input @bind="buscar" @bind:event="oninput" placeholder="Buscar autos..." class="form-control mb-3" />
+
+<div class="row">
+    @if (productos is null)
+    {
+        <p>Cargando productos...</p>
+    }
+    else if (productos.Count == 0)
+    {
+        <p>No se encontraron productos.</p>
+    }
+    else
+    {
+        @foreach (var p in productos)
+        {
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <img src="@p.ImagUrl" class="card-img-top" style="height:200px;object-fit:cover;" />
+                    <div class="card-body">
+                        <h5 class="card-title">@p.Nombre</h5>
+                        <p class="card-text">@p.Descripcion</p>
+                        <p>Stock: @p.Stock</p>
+                        <p><b>$@p.Precio</b></p>
+                        <button class="btn btn-primary" @onclick="() => AgregarAlCarrito(p.Id)">Agregar al carrito</button>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    List<Producto> productos;
+    string buscar = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await BuscarProductos();
+    }
+
+    async Task BuscarProductos()
+    {
+        var url = string.IsNullOrWhiteSpace(buscar) ? "productos" : $"productos?buscar={buscar}";
+        productos = await Http.GetFromJsonAsync<List<Producto>>(url);
+    }
+
+    async Task AgregarAlCarrito(int productoId)
+    {
+        
+        await Task.CompletedTask;
+    }
+}
