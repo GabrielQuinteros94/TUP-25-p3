@@ -1,6 +1,9 @@
+using Microsoft.EntityFrameworkCore;
+using servidor.Modelos;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Agregar servicios CORS para permitir solicitudes desde el cliente
+
 builder.Services.AddCors(options => {
     options.AddPolicy("AllowClientApp", policy => {
         policy.WithOrigins("http://localhost:5177", "https://localhost:7221")
@@ -9,23 +12,153 @@ builder.Services.AddCors(options => {
     });
 });
 
-// Agregar controladores si es necesario
 builder.Services.AddControllers();
+builder.Services.AddDbContext<TiendaContext>(options =>
+    options.UseSqlite("Data Source=tienda.db"));
 
 var app = builder.Build();
 
-// Configurar el pipeline de solicitudes HTTP
+
 if (app.Environment.IsDevelopment()) {
     app.UseDeveloperExceptionPage();
 }
-
-// Usar CORS con la política definida
 app.UseCors("AllowClientApp");
 
-// Mapear rutas básicas
 app.MapGet("/", () => "Servidor API está en funcionamiento");
 
-// Ejemplo de endpoint de API
+
 app.MapGet("/api/datos", () => new { Mensaje = "Datos desde el servidor", Fecha = DateTime.Now });
+
+
+app.MapGet("/productos", async (TiendaContext baseD, string? buscar) =>
+{
+    var query = baseD.Productos.AsQueryable();
+
+    if (!string.IsNullOrWhiteSpace(buscar))
+        query = query.Where(p => p.Nombre.Contains(buscar) || p.Descripcion.Contains(buscar));
+
+    var productos = await query.ToListAsync();
+    return Results.Ok(productos);
+});
+
+app.MapPost("/carritos", async (TiendaContext baseD) =>
+{
+    var carrito = new Carrito();
+    baseD.Carritos.Add(carrito);
+    await baseD.SaveChangesAsync();
+    return Results.Ok(carrito.Id);
+});
+
+app.MapGet("/carritos/{carritoId}", async (TiendaContext baseD, Guid carritoId) =>
+{
+    var carrito = await baseD.Carritos.Include(c => c.Items).FirstOrDefaultAsync(c => c.Id == carritoId);
+    if (carrito == null) return Results.NotFound();
+    return Results.Ok(carrito.Items);
+});
+
+app.MapDelete("/carritos/{carritoId}", async (TiendaContext baseD, Guid carritoId) =>
+{
+    var carrito = await baseD.Carritos.Include(c => c.Items).FirstOrDefaultAsync(c => c.Id == carritoId);
+    if (carrito == null) return Results.NotFound();
+    carrito.Items.Clear();
+    await baseD.SaveChangesAsync();
+    return Results.Ok();
+});
+
+
+app.MapPut("/carritos/{carritoId}/{productoId}", async (TiendaContext baseD, Guid carritoId, int productoId, int cantidad) =>
+{
+    var carrito = await baseD.Carritos.Include(c => c.Items).FirstOrDefaultAsync(c => c.Id == carritoId);
+    var producto = await baseD.Productos.FindAsync(productoId);
+    if (carrito == null || producto == null) return Results.NotFound();
+
+    if (producto.Stock < cantidad) return Results.BadRequest("Stock insuficiente");
+
+    var item = carrito.Items.FirstOrDefault(i => i.ProductoId == productoId);
+    if (item == null)
+        carrito.Items.Add(new ItemCarrito { ProductoId = productoId, Cantidad = cantidad });
+    else
+        item.Cantidad = cantidad;
+
+    await baseD.SaveChangesAsync();
+    return Results.Ok();
+});
+
+//  producto del carrito
+app.MapDelete("/carritos/{carritoId}/{productoId}", async (TiendaContext baseD, Guid carritoId, int productoId) =>
+{
+    var carrito = await baseD.Carritos.Include(c => c.Items).FirstOrDefaultAsync(c => c.Id == carritoId);
+    if (carrito == null) return Results.NotFound();
+
+    var item = carrito.Items.FirstOrDefault(i => i.ProductoId == productoId);
+    if (item != null)
+    {
+        carrito.Items.Remove(item);
+        await baseD.SaveChangesAsync();
+    }
+    return Results.Ok();
+});
+
+//  Confirmar compra
+app.MapPut("/carritos/{carritoId}/confirmar", async (TiendaContext baseD, Guid carritoId, ClienteDto cliente) =>
+{
+    var carrito = await baseD.Carritos.Include(c => c.Items).FirstOrDefaultAsync(c => c.Id == carritoId);
+    if (carrito == null || !carrito.Items.Any()) return Results.BadRequest("Carrito vacío o no existe");
+
+    // Validar stock
+    foreach (var item in carrito.Items)
+    {
+        var producto = await baseD.Productos.FindAsync(item.ProductoId);
+        if (producto == null || producto.Stock < item.Cantidad)
+            return Results.BadRequest($"Stock insuficiente para {producto?.Nombre}");
+        producto.Stock -= item.Cantidad;
+    }
+
+    // Registrar compra
+    var compra = new Compra
+    {
+        Fecha = DateTime.Now,
+        NombreCliente = cliente.Nombre,
+        ApellidoCliente = cliente.Apellido,
+        EmailCliente = cliente.Email,
+        Total = carrito.Items.Sum(i => baseD.Productos.First(p => p.Id == i.ProductoId).Precio * i.Cantidad),
+        Items = carrito.Items.Select(i => new ItemCompra
+        {
+            ProductoId = i.ProductoId,
+            Cantidad = i.Cantidad,
+            PrecioUnitario = baseD.Productos.First(p => p.Id == i.ProductoId).Precio
+        }).ToList()
+    };
+    baseD.Compras.Add(compra);
+
+    // Vaciar carrito
+    carrito.Items.Clear();
+    await baseD.SaveChangesAsync();
+    return Results.Ok(compra.Id);
+});
+
+
+using (var scope = app.Services.CreateScope())
+{
+    var baseD = scope.ServiceProvider.GetRequiredService<TiendaContext>();
+    baseD.Database.EnsureCreated();
+
+    if (!baseD.Productos.Any())
+    {
+        baseD.Productos.AddRange(
+            new Producto { Nombre = "Toyota Corolla", Descripcion = "Sedán compacto, motor 1.8L", Precio = 12000000, Stock = 5, ImagUrl = "https://cdn.pixabay.com/photo/2012/05/29/00/43/car-49278_1280.jpg" },
+            new Producto { Nombre = "Ford Fiesta", Descripcion = "Hatchback, motor 1.6L", Precio = 9500000, Stock = 7, ImagUrl = "https://cdn.pixabay.com/photo/2013/07/13/12/46/ford-146872_1280.png" },
+            new Producto { Nombre = "Volkswagen Golf", Descripcion = "Hatchback, motor 1.4L TSI", Precio = 11000000, Stock = 4, ImagUrl = "https://cdn.pixabay.com/photo/2017/01/06/19/15/volkswagen-1957037_1280.jpg" },
+            new Producto { Nombre = "Chevrolet Onix", Descripcion = "Hatchback, motor 1.2L", Precio = 8700000, Stock = 8, ImagUrl = "https://cdn.pixabay.com/photo/2016/11/29/09/32/auto-1868726_1280.jpg" },
+            new Producto { Nombre = "Renault Sandero", Descripcion = "Hatchback, motor 1.6L", Precio = 8000000, Stock = 6, ImagUrl = "https://cdn.pixabay.com/photo/2012/05/29/00/43/car-49278_1280.jpg" },
+            new Producto { Nombre = "Peugeot 208", Descripcion = "Hatchback, motor 1.2L", Precio = 9200000, Stock = 9, ImagUrl = "https://cdn.pixabay.com/photo/2017/01/06/19/15/volkswagen-1957037_1280.jpg" },
+            new Producto { Nombre = "Fiat Cronos", Descripcion = "Sedán, motor 1.3L", Precio = 8500000, Stock = 10, ImagUrl = "https://cdn.pixabay.com/photo/2016/11/29/09/32/auto-1868726_1280.jpg" },
+            new Producto { Nombre = "Honda Civic", Descripcion = "Sedán, motor 2.0L", Precio = 15000000, Stock = 3, ImagUrl = "https://cdn.pixabay.com/photo/2012/05/29/00/43/car-49278_1280.jpg" },
+            new Producto { Nombre = "Nissan Versa", Descripcion = "Sedán, motor 1.6L", Precio = 9800000, Stock = 6, ImagUrl = "https://cdn.pixabay.com/photo/2013/07/13/12/46/ford-146872_1280.png" },
+            new Producto { Nombre = "Toyota Hilux", Descripcion = "Pick-up, motor 2.8L", Precio = 18000000, Stock = 2, ImagUrl = "https://cdn.pixabay.com/photo/2017/01/06/19/15/volkswagen-1957037_1280.jpg" }
+        );
+        baseD.SaveChanges();
+    }
+}
 
 app.Run();
