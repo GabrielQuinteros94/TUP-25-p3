@@ -1,0 +1,75 @@
+@page "/carrito"
+@using cliente.Modelos
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<h1>Carrito de compras</h1>
+
+@if (items is null)
+{
+    <p>Cargando carrito...</p>
+}
+else if (items.Count == 0)
+{
+    <p>El carrito está vacío.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in items)
+            {
+                <tr>
+                    <td>@item.ProductoId</td>
+                    <td>@item.Cantidad</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm" @onclick="() => EliminarDelCarrito(item.ProductoId)">Eliminar</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    List<ItemCarrito> items;
+    string carritoId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarCarrito();
+    }
+
+    async Task CargarCarrito()
+    {
+        var id = await ObtenerOCrearCarritoId();
+        items = await Http.GetFromJsonAsync<List<ItemCarrito>>($"carritos/{id}");
+    }
+
+    async Task<string> ObtenerOCrearCarritoId()
+    {
+        carritoId = await JS.InvokeAsync<string>("localStorage.getItem", "carritoId");
+        if (string.IsNullOrEmpty(carritoId))
+        {
+            var response = await Http.PostAsync("carritos", null);
+            carritoId = await response.Content.ReadAsStringAsync();
+            carritoId = carritoId.Trim('"'); // Quita comillas si vienen en la respuesta
+            await JS.InvokeVoidAsync("localStorage.setItem", "carritoId", carritoId);
+        }
+        return carritoId;
+    }
+
+    async Task EliminarDelCarrito(int productoId)
+    {
+        var id = await ObtenerOCrearCarritoId();
+        await Http.DeleteAsync($"carritos/{id}/{productoId}");
+        await CargarCarrito();
+    }
+}
