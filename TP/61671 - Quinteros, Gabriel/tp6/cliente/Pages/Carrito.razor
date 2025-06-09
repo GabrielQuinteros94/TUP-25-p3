@@ -40,11 +40,23 @@ else
 
 @code {
     List<ItemCarrito> items;
-    string carritoId;
 
     protected override async Task OnInitializedAsync()
     {
         await CargarCarrito();
+    }
+
+    async Task<string> ObtenerOCrearCarritoId()
+    {
+        var carritoId = await JS.InvokeAsync<string>("localStorage.getItem", "carritoId");
+        if (string.IsNullOrEmpty(carritoId))
+        {
+            var response = await Http.PostAsync("carritos", null);
+            carritoId = await response.Content.ReadAsStringAsync();
+            carritoId = carritoId.Trim('"');
+            await JS.InvokeVoidAsync("localStorage.setItem", "carritoId", carritoId);
+        }
+        return carritoId;
     }
 
     async Task CargarCarrito()
@@ -53,23 +65,22 @@ else
         items = await Http.GetFromJsonAsync<List<ItemCarrito>>($"carritos/{id}");
     }
 
-    async Task<string> ObtenerOCrearCarritoId()
-    {
-        carritoId = await JS.InvokeAsync<string>("localStorage.getItem", "carritoId");
-        if (string.IsNullOrEmpty(carritoId))
-        {
-            var response = await Http.PostAsync("carritos", null);
-            carritoId = await response.Content.ReadAsStringAsync();
-            carritoId = carritoId.Trim('"'); // Quita comillas si vienen en la respuesta
-            await JS.InvokeVoidAsync("localStorage.setItem", "carritoId", carritoId);
-        }
-        return carritoId;
-    }
-
     async Task EliminarDelCarrito(int productoId)
     {
         var id = await ObtenerOCrearCarritoId();
         await Http.DeleteAsync($"carritos/{id}/{productoId}");
         await CargarCarrito();
+    }
+
+    async Task AgregarAlCarrito(int productoId)
+    {
+        var carritoId = await ObtenerOCrearCarritoId();
+        var response = await Http.PutAsync($"carritos/{carritoId}/{productoId}?cantidad=1", null);
+        if (response.IsSuccessStatusCode)
+        {
+        }
+        else
+        {
+        }
     }
 }

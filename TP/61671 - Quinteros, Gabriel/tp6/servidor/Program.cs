@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using servidor.Modelos;
+using System.Net.Http.Headers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +16,7 @@ builder.Services.AddCors(options => {
 builder.Services.AddControllers();
 builder.Services.AddDbContext<TiendaContext>(options =>
     options.UseSqlite("Data Source=tienda.db"));
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://localhost:5000/") });
 
 var app = builder.Build();
 
