@@ -78,15 +78,15 @@ app.MapPut("/carritos/{carritoId}/{productoId}", async (TiendaContext baseD, Gui
 
     var item = carrito.Items.FirstOrDefault(i => i.ProductoId == productoId);
     if (item == null)
-        carrito.Items.Add(new ItemCarrito { ProductoId = productoId, Cantidad = cantidad });
+        carrito.Items.Add(new ItemCarrito { ProductoId = productoId, Cantidad = cantidad, CarritoId = carritoId });
     else
-        item.Cantidad = cantidad;
+        item.Cantidad += cantidad; 
 
     await baseD.SaveChangesAsync();
     return Results.Ok();
 });
 
-//  producto del carrito
+
 app.MapDelete("/carritos/{carritoId}/{productoId}", async (TiendaContext baseD, Guid carritoId, int productoId) =>
 {
     var carrito = await baseD.Carritos.Include(c => c.Items).FirstOrDefaultAsync(c => c.Id == carritoId);
@@ -101,13 +101,12 @@ app.MapDelete("/carritos/{carritoId}/{productoId}", async (TiendaContext baseD, 
     return Results.Ok();
 });
 
-//  Confirmar compra
 app.MapPut("/carritos/{carritoId}/confirmar", async (TiendaContext baseD, Guid carritoId, ClienteDto cliente) =>
 {
     var carrito = await baseD.Carritos.Include(c => c.Items).FirstOrDefaultAsync(c => c.Id == carritoId);
     if (carrito == null || !carrito.Items.Any()) return Results.BadRequest("Carrito vacío o no existe");
 
-    // Validar stock
+
     foreach (var item in carrito.Items)
     {
         var producto = await baseD.Productos.FindAsync(item.ProductoId);
@@ -116,7 +115,6 @@ app.MapPut("/carritos/{carritoId}/confirmar", async (TiendaContext baseD, Guid c
         producto.Stock -= item.Cantidad;
     }
 
-    // Registrar compra
     var compra = new Compra
     {
         Fecha = DateTime.Now,
@@ -133,7 +131,7 @@ app.MapPut("/carritos/{carritoId}/confirmar", async (TiendaContext baseD, Guid c
     };
     baseD.Compras.Add(compra);
 
-    // Vaciar carrito
+    
     carrito.Items.Clear();
     await baseD.SaveChangesAsync();
     return Results.Ok(compra.Id);

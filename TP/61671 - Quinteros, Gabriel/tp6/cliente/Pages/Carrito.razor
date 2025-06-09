@@ -5,7 +5,7 @@
 
 <h1>Carrito de compras</h1>
 
-@if (items is null)
+@if (items is null || productos is null)
 {
     <p>Cargando carrito...</p>
 }
@@ -26,9 +26,13 @@ else
         <tbody>
             @foreach (var item in items)
             {
+                var producto = productos.FirstOrDefault(p => p.Id == item.ProductoId);
                 <tr>
-                    <td>@item.ProductoId</td>
-                    <td>@item.Cantidad</td>
+                    <td>@(producto?.Nombre ?? $"ID: {item.ProductoId}")</td>
+                    <td>
+                        <input type="number" min="1" value="@item.Cantidad" style="width:60px"
+                               @onchange="async e => await CambiarCantidad(item.ProductoId, int.Parse(e.Value.ToString()))" />
+                    </td>
                     <td>
                         <button class="btn btn-danger btn-sm" @onclick="() => EliminarDelCarrito(item.ProductoId)">Eliminar</button>
                     </td>
@@ -36,14 +40,23 @@ else
             }
         </tbody>
     </table>
+    <button class="btn btn-warning" @onclick="VaciarCarrito">Vaciar carrito</button>
+    <a class="btn btn-success" href="/confirmar">Confirmar compra</a>
 }
 
 @code {
     List<ItemCarrito> items;
+    List<Producto> productos;
 
     protected override async Task OnInitializedAsync()
     {
+        await CargarProductos();
         await CargarCarrito();
+    }
+
+    async Task CargarProductos()
+    {
+        productos = await Http.GetFromJsonAsync<List<Producto>>("productos");
     }
 
     async Task<string> ObtenerOCrearCarritoId()
@@ -62,7 +75,22 @@ else
     async Task CargarCarrito()
     {
         var id = await ObtenerOCrearCarritoId();
-        items = await Http.GetFromJsonAsync<List<ItemCarrito>>($"carritos/{id}");
+        try
+        {
+            var response = await Http.GetAsync($"carritos/{id}");
+            if (response.IsSuccessStatusCode)
+            {
+                items = await response.Content.ReadFromJsonAsync<List<ItemCarrito>>();
+            }
+            else
+            {
+                items = new List<ItemCarrito>();
+            }
+        }
+        catch
+        {
+            items = new List<ItemCarrito>();
+        }
     }
 
     async Task EliminarDelCarrito(int productoId)
@@ -72,15 +100,17 @@ else
         await CargarCarrito();
     }
 
-    async Task AgregarAlCarrito(int productoId)
+    async Task CambiarCantidad(int productoId, int nuevaCantidad)
     {
-        var carritoId = await ObtenerOCrearCarritoId();
-        var response = await Http.PutAsync($"carritos/{carritoId}/{productoId}?cantidad=1", null);
-        if (response.IsSuccessStatusCode)
-        {
-        }
-        else
-        {
-        }
+        var id = await ObtenerOCrearCarritoId();
+        await Http.PutAsync($"carritos/{id}/{productoId}?cantidad={nuevaCantidad}", null);
+        await CargarCarrito();
+    }
+
+    async Task VaciarCarrito()
+    {
+        var id = await ObtenerOCrearCarritoId();
+        await Http.DeleteAsync($"carritos/{id}");
+        await CargarCarrito();
     }
 }

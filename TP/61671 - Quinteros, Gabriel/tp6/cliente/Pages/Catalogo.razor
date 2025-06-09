@@ -2,15 +2,19 @@
 @using cliente.Modelos
 @inject HttpClient Http
 @inject IJSRuntime JS
+@inject NavigationManager Nav
 
 <h1>Catálogo de Autos</h1>
 
-<input @bind="buscar" @bind:event="oninput" placeholder="Buscar autos..." class="form-control mb-3" />
+<div class="d-flex mb-3">
+    <input @bind="buscar" @bind:event="oninput" placeholder="Buscar autos..." class="form-control me-2" style="max-width:300px;" />
+    <button class="btn btn-outline-primary" @onclick="IrAlCarrito">Ver carrito</button>
+</div>
 
 <div class="row">
     @if (productos is null)
     {
-        <p>Cargando productos...</p>
+        <p>Buscando autos...</p>
     }
     else if (productos.Count == 0)
     {
@@ -58,7 +62,7 @@
         {
             var response = await Http.PostAsync("carritos", null);
             carritoId = await response.Content.ReadAsStringAsync();
-            carritoId = carritoId.Trim('"');
+            carritoId = carritoId.Replace("\"", "").Trim(); 
             await JS.InvokeVoidAsync("localStorage.setItem", "carritoId", carritoId);
         }
         return carritoId;
@@ -67,14 +71,11 @@
     async Task AgregarAlCarrito(int productoId)
     {
         var carritoId = await ObtenerOCrearCarritoId();
-        var response = await Http.PutAsync($"carritos/{carritoId}/{productoId}?cantidad=1", null);
-        if (response.IsSuccessStatusCode)
-        {
-            
-        }
-        else
-        {
-            
-        }
+        await Http.PutAsync($"carritos/{carritoId}/{productoId}?cantidad=1", null);
+    }
+
+    void IrAlCarrito()
+    {
+        Nav.NavigateTo("/carrito");
     }
 }
