@@ -96,7 +96,7 @@ else
         {
             mensaje = "¡Compra confirmada!";
             await JS.InvokeVoidAsync("localStorage.removeItem", "carritoId");
-            
+            Nav.NavigateTo("/");
         }
         else
         {

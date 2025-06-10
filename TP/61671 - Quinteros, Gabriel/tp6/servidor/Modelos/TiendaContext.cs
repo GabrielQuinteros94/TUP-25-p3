@@ -17,7 +17,7 @@ namespace servidor.Modelos
         {
             modelBuilder.Entity<Carrito>()
                 .HasMany(c => c.Items)
-                .WithOne()
+                .WithOne(i => i.Carrito)
                 .HasForeignKey(i => i.CarritoId);
 
             modelBuilder.Entity<Producto>().HasData(

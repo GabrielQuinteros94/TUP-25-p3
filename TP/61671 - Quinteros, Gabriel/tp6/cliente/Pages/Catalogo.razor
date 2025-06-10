@@ -2,7 +2,7 @@
 @using cliente.Modelos
 @inject HttpClient Http
 @inject IJSRuntime JS
-@inject NavigationManager Nav
+@inject NavigationManager NavigationManager
 
 <h1>Catálogo de Autos</h1>
 
@@ -72,11 +72,11 @@
     {
         var carritoId = await ObtenerOCrearCarritoId();
         await Http.PutAsync($"carritos/{carritoId}/{productoId}?cantidad=1", null);
-        await BuscarProductos(); 
+        await BuscarProductos();
     }
 
     void IrAlCarrito()
     {
-        Nav.NavigateTo("/carrito");
+        NavigationManager.NavigateTo("/carrito");
     }
 }

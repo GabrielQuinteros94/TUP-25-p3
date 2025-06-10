@@ -102,9 +102,19 @@ else
 
     async Task CambiarCantidad(int productoId, int nuevaCantidad)
     {
-        var id = await ObtenerOCrearCarritoId();
-        await Http.PutAsync($"carritos/{id}/{productoId}?cantidad={nuevaCantidad}", null);
-        await CargarCarrito();
+        var carritoId = await JS.InvokeAsync<string>("localStorage.getItem", "carritoId");
+        var response = await Http.PutAsync($"carritos/{carritoId}/{productoId}/cantidad?nuevaCantidad={nuevaCantidad}", null);
+
+        if (response.IsSuccessStatusCode)
+        {
+            await CargarCarrito(); 
+        }
+        else
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            await JS.InvokeVoidAsync("alert", $"No se pudo actualizar la cantidad: {error}");
+            await CargarCarrito(); 
+        }
     }
 
     async Task VaciarCarrito()

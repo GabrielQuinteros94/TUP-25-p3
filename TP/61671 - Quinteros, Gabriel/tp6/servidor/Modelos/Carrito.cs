@@ -2,7 +2,7 @@ namespace servidor.Modelos
 {
     public class Carrito
     {
-        public Guid Id { get; set; } = Guid.NewGuid();
+        public Guid Id { get; set; }
         public List<ItemCarrito> Items { get; set; } = new();
     }
 
@@ -10,7 +10,10 @@ namespace servidor.Modelos
     {
         public int Id { get; set; }
         public int ProductoId { get; set; }
-        public int Cantidad { get; set; }
         public Guid CarritoId { get; set; }
+        public int Cantidad { get; set; }
+
+        public Producto Producto { get; set; }
+        public Carrito Carrito { get; set; }
     }
 }
