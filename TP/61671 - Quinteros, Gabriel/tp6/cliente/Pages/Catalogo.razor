@@ -72,6 +72,7 @@
     {
         var carritoId = await ObtenerOCrearCarritoId();
         await Http.PutAsync($"carritos/{carritoId}/{productoId}?cantidad=1", null);
+        await BuscarProductos(); 
     }
 
     void IrAlCarrito()
