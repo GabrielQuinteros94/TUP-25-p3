@@ -37,7 +37,10 @@ app.MapGet("/productos", async (TiendaContext baseD, string? buscar) =>
     var query = baseD.Productos.AsQueryable();
 
     if (!string.IsNullOrWhiteSpace(buscar))
-        query = query.Where(p => p.Nombre.Contains(buscar) || p.Descripcion.Contains(buscar));
+        query = query.Where(p =>
+            p.Nombre.ToLower().Contains(buscar.ToLower()) ||
+            p.Descripcion.ToLower().Contains(buscar.ToLower())
+        );
 
     var productos = await query.ToListAsync();
     return Results.Ok(productos);

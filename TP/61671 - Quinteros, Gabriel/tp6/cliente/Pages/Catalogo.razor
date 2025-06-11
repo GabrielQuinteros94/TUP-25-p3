@@ -42,7 +42,19 @@
 
 @code {
     List<Producto> productos;
-    string buscar = "";
+    string _buscar = "";
+    string buscar
+    {
+        get => _buscar;
+        set
+        {
+            if (_buscar != value)
+            {
+                _buscar = value;
+                _ = BuscarProductos();
+            }
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -72,7 +84,7 @@
     {
         var carritoId = await ObtenerOCrearCarritoId();
         await Http.PutAsync($"carritos/{carritoId}/{productoId}?cantidad=1", null);
-        await BuscarProductos();
+        await BuscarProductos(); 
     }
 
     void IrAlCarrito()
