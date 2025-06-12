@@ -2,9 +2,12 @@
 @using cliente.Modelos
 @inject HttpClient Http
 @inject IJSRuntime JS
+@inject NavigationManager NavigationManager
 
 <div class="d-flex align-items-center justify-content-center mb-4" style="gap: 24px;">
-    <img src="/logorueda.jpg" alt="Logo" style="height: 150px;" />
+    <a href="/">
+        <img src="/logorueda.jpg" alt="Logo" style="height: 150px; cursor: pointer;" />
+    </a>
     <h1 class="mb-0 text-center">Carrito de compras</h1>
 </div>
 
@@ -124,6 +127,6 @@ else
     {
         var id = await ObtenerOCrearCarritoId();
         await Http.DeleteAsync($"carritos/{id}");
-        await CargarCarrito();
+        NavigationManager.NavigateTo("/"); // Redirige al catálogo
     }
 }
