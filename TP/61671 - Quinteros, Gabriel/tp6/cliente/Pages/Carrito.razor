@@ -3,7 +3,10 @@
 @inject HttpClient Http
 @inject IJSRuntime JS
 
-<h1>Carrito de compras</h1>
+<div class="d-flex align-items-center justify-content-center mb-4" style="gap: 24px;">
+    <img src="/logorueda.jpg" alt="Logo" style="height: 150px;" />
+    <h1 class="mb-0 text-center">Carrito de compras</h1>
+</div>
 
 @if (items is null || productos is null)
 {
