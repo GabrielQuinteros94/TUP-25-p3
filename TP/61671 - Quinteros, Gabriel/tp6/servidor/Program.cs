@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using servidor.Modelos;
 using System.Net.Http.Headers;
+using Microsoft.Extensions.FileProviders;
+using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +27,15 @@ if (app.Environment.IsDevelopment()) {
     app.UseDeveloperExceptionPage();
 }
 app.UseCors("AllowClientApp");
+app.UseStaticFiles(); 
+
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(Directory.GetCurrentDirectory(), "../cliente/wwwroot")),
+    RequestPath = ""
+});
 
 app.MapGet("/", () => "Servidor API está en funcionamiento");
 
@@ -206,16 +217,16 @@ using (var scope = app.Services.CreateScope())
     if (!baseD.Productos.Any())
     {
         baseD.Productos.AddRange(
-            new Producto { Nombre = "Toyota Corolla", Descripcion = "Sedán compacto, motor 1.8L", Precio = 12000000, Stock = 5, ImagUrl = "https://cdn.pixabay.com/photo/2012/05/29/00/43/car-49278_1280.jpg" },
-            new Producto { Nombre = "Ford Fiesta", Descripcion = "Hatchback, motor 1.6L", Precio = 9500000, Stock = 7, ImagUrl = "https://cdn.pixabay.com/photo/2013/07/13/12/46/ford-146872_1280.png" },
-            new Producto { Nombre = "Volkswagen Golf", Descripcion = "Hatchback, motor 1.4L TSI", Precio = 11000000, Stock = 4, ImagUrl = "https://cdn.pixabay.com/photo/2017/01/06/19/15/volkswagen-1957037_1280.jpg" },
-            new Producto { Nombre = "Chevrolet Onix", Descripcion = "Hatchback, motor 1.2L", Precio = 8700000, Stock = 8, ImagUrl = "https://cdn.pixabay.com/photo/2016/11/29/09/32/auto-1868726_1280.jpg" },
-            new Producto { Nombre = "Renault Sandero", Descripcion = "Hatchback, motor 1.6L", Precio = 8000000, Stock = 6, ImagUrl = "https://cdn.pixabay.com/photo/2012/05/29/00/43/car-49278_1280.jpg" },
-            new Producto { Nombre = "Peugeot 208", Descripcion = "Hatchback, motor 1.2L", Precio = 9200000, Stock = 9, ImagUrl = "https://cdn.pixabay.com/photo/2017/01/06/19/15/volkswagen-1957037_1280.jpg" },
-            new Producto { Nombre = "Fiat Cronos", Descripcion = "Sedán, motor 1.3L", Precio = 8500000, Stock = 10, ImagUrl = "https://cdn.pixabay.com/photo/2016/11/29/09/32/auto-1868726_1280.jpg" },
-            new Producto { Nombre = "Honda Civic", Descripcion = "Sedán, motor 2.0L", Precio = 15000000, Stock = 3, ImagUrl = "https://cdn.pixabay.com/photo/2012/05/29/00/43/car-49278_1280.jpg" },
-            new Producto { Nombre = "Nissan Versa", Descripcion = "Sedán, motor 1.6L", Precio = 9800000, Stock = 6, ImagUrl = "https://cdn.pixabay.com/photo/2013/07/13/12/46/ford-146872_1280.png" },
-            new Producto { Nombre = "Toyota Hilux", Descripcion = "Pick-up, motor 2.8L", Precio = 18000000, Stock = 2, ImagUrl = "https://cdn.pixabay.com/photo/2017/01/06/19/15/volkswagen-1957037_1280.jpg" }
+            new Producto { Nombre = "Toyota Corolla", Descripcion = "Sedán compacto, motor 1.8L", Precio = 12000000, Stock = 5, ImagUrl = "toyotacorolla.jpg" },
+            new Producto { Nombre = "Ford Fiesta", Descripcion = "Hatchback, motor 1.6L", Precio = 9500000, Stock = 7, ImagUrl = "forfiesta.jpg" },
+            new Producto { Nombre = "Volkswagen Golf", Descripcion = "Hatchback, motor 1.4L TSI", Precio = 11000000, Stock = 4, ImagUrl = "VolkswagenGolf.jpg" },
+            new Producto { Nombre = "Chevrolet Onix", Descripcion = "Hatchback, motor 1.2L", Precio = 8700000, Stock = 8, ImagUrl = "ChevroletOnix.jpg" },
+            new Producto { Nombre = "Renault Sandero", Descripcion = "Hatchback, motor 1.6L", Precio = 8000000, Stock = 6, ImagUrl = "RenaultSandero.jpg" },
+            new Producto { Nombre = "Peugeot 208", Descripcion = "Hatchback, motor 1.2L", Precio = 9200000, Stock = 9, ImagUrl = "Peugeot 208.jpg" },
+            new Producto { Nombre = "Fiat Cronos", Descripcion = "Sedán, motor 1.3L", Precio = 8500000, Stock = 10, ImagUrl = "FiatCronos.jpg" },
+            new Producto { Nombre = "Honda Civic", Descripcion = "Sedán, motor 2.0L", Precio = 15000000, Stock = 3, ImagUrl = "HondaCivic.jpg" },
+            new Producto { Nombre = "Nissan Versa", Descripcion = "Sedán, motor 1.6L", Precio = 9800000, Stock = 6, ImagUrl = "NissanVersa.jpg" },
+            new Producto { Nombre = "Toyota Hilux", Descripcion = "Pick-up, motor 2.8L", Precio = 18000000, Stock = 2, ImagUrl = "ToyotaHilux.jpg" }
         );
         baseD.SaveChanges();
     }

@@ -127,6 +127,6 @@ else
     {
         var id = await ObtenerOCrearCarritoId();
         await Http.DeleteAsync($"carritos/{id}");
-        NavigationManager.NavigateTo("/"); // Redirige al catálogo
+        NavigationManager.NavigateTo("/"); 
     }
 }

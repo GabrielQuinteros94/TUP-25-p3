@@ -58,7 +58,7 @@ else
             <InputText class="form-control" @bind-Value="cliente.Email" />
             <ValidationMessage For="@(() => cliente.Email)" />
         </div>
-        <!-- Agrega más campos aquí -->
+        
 
         <button class="btn btn-success" type="submit">Confirmar compra</button>
     </EditForm>
@@ -124,6 +124,6 @@ else
         [EmailAddress(ErrorMessage = "El email no es válido")]
         public string Email { get; set; }
 
-        // Agrega otros campos y validaciones según necesites
+        
     }
 }
