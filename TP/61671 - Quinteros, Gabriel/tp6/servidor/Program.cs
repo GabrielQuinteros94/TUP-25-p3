@@ -69,20 +69,16 @@ app.MapGet("/carritos/{carritoId}", async (TiendaContext db, Guid carritoId) =>
 {
     var carrito = await db.Carritos
         .Include(c => c.Items)
-        .ThenInclude(i => i.Producto)
         .FirstOrDefaultAsync(c => c.Id == carritoId);
 
     if (carrito == null) return Results.NotFound();
 
+    
     var resultado = carrito.Items.Select(i => new {
+        i.Id,
         i.ProductoId,
-        Producto = new {
-            i.Producto.Nombre,
-            i.Producto.Precio,
-            i.Producto.ImagUrl,
-            i.Producto.Descripcion
-        },
-        i.Cantidad
+        i.Cantidad,
+        i.CarritoId
     });
 
     return Results.Ok(resultado);
@@ -97,7 +93,7 @@ app.MapDelete("/carritos/{carritoId}", async (TiendaContext baseD, Guid carritoI
     {
         var producto = await baseD.Productos.FindAsync(item.ProductoId);
         if (producto != null)
-            producto.Stock += item.Cantidad; 
+            producto.Stock += item.Cantidad;
     }
 
     carrito.Items.Clear();
@@ -107,6 +103,32 @@ app.MapDelete("/carritos/{carritoId}", async (TiendaContext baseD, Guid carritoI
 
 
 app.MapPut("/carritos/{carritoId}/{productoId}", async (TiendaContext baseD, Guid carritoId, int productoId, int cantidad) =>
+{
+    var carrito = await baseD.Carritos.Include(c => c.Items).FirstOrDefaultAsync(c => c.Id == carritoId);
+    var producto = await baseD.Productos.FindAsync(productoId);
+    if (carrito == null || producto == null) return Results.NotFound();
+
+    if (cantidad <= 0) return Results.BadRequest("Cantidad inválida");
+    if (producto.Stock < cantidad) return Results.BadRequest("Stock insuficiente");
+
+    var item = carrito.Items.FirstOrDefault(i => i.ProductoId == productoId);
+    if (item == null)
+        carrito.Items.Add(new ItemCarrito { ProductoId = productoId, Cantidad = cantidad, CarritoId = carritoId });
+    else
+        item.Cantidad += cantidad;
+
+    producto.Stock -= cantidad;
+
+
+
+
+
+
+    await baseD.SaveChangesAsync();
+    return Results.Ok();
+});
+
+app.MapPost("/carritos/{carritoId}/{productoId}", async (TiendaContext baseD, Guid carritoId, int productoId, int cantidad) =>
 {
     var carrito = await baseD.Carritos.Include(c => c.Items).FirstOrDefaultAsync(c => c.Id == carritoId);
     var producto = await baseD.Productos.FindAsync(productoId);

@@ -72,7 +72,7 @@ else
         {
             var response = await Http.PostAsync("carritos", null);
             carritoId = await response.Content.ReadAsStringAsync();
-            carritoId = carritoId.Trim('"');
+            carritoId = carritoId.Replace("\"", "").Trim(); 
             await JS.InvokeVoidAsync("localStorage.setItem", "carritoId", carritoId);
         }
         return carritoId;
@@ -87,6 +87,13 @@ else
             if (response.IsSuccessStatusCode)
             {
                 items = await response.Content.ReadFromJsonAsync<List<ItemCarrito>>();
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+             
+                await JS.InvokeVoidAsync("localStorage.removeItem", "carritoId");
+                id = await ObtenerOCrearCarritoId();
+                items = new List<ItemCarrito>();
             }
             else
             {
