@@ -27,7 +27,7 @@ if (app.Environment.IsDevelopment()) {
     app.UseDeveloperExceptionPage();
 }
 app.UseCors("AllowClientApp");
-app.UseStaticFiles(); 
+app.UseStaticFiles(); //.
 
 
 app.UseStaticFiles(new StaticFileOptions
